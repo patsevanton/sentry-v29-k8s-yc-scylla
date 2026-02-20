@@ -6,14 +6,6 @@ user:
 system:
   url: "${system_url}"
 
-images:
-  sentry:
-    repository: ghcr.io/patsevanton/ghcr-sentry-custom-images
-  snuba:
-    repository: ghcr.io/patsevanton/ghcr-snuba-custom-images
-  relay:
-    repository: ghcr.io/patsevanton/ghcr-relay-custom-images
-
 nginx:
   enabled: ${nginx_enabled}
 
