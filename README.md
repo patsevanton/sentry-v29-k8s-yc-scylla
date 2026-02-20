@@ -15,11 +15,13 @@ kubectl create namespace clickhouse
 
 ```bash
 helm repo add altinity https://helm.altinity.com
-helm update
+helm repo update
 helm upgrade --install clickhouse-operator altinity/altinity-clickhouse-operator \
+  --version 0.26.0 \
   --namespace clickhouse-operator \
   --create-namespace \
-  --set watchNamespaces[0]=clickhouse
+  --set watchNamespaces[0]=clickhouse \
+  --wait
 ```
 
 Оператор будет наблюдать за namespace `clickhouse`, где будет установлен ClickHouse.
