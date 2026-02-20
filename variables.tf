@@ -1,3 +1,9 @@
+variable "folder_id" {
+  description = "Yandex Cloud folder ID (optional; defaults to client config)"
+  type        = string
+  default     = ""
+}
+
 # variable "filestore_bucket_name" {
 #   description = "S3 bucket name for Sentry filestore"
 #   type        = string

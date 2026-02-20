@@ -2,8 +2,9 @@
 data "yandex_client_config" "client" {}
 
 # Локальные переменные для k8s (остальное закомментировано)
+# folder_id: переменная или client config (при destroy без YC контекста задайте TF_VAR_folder_id)
 locals {
-  folder_id = data.yandex_client_config.client.folder_id
+  folder_id = var.folder_id != "" ? var.folder_id : data.yandex_client_config.client.folder_id
 }
 
 # # Генерация случайного пароля для ClickHouse
