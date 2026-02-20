@@ -1,7 +1,5 @@
 # Развёртывание Sentry v29.2.0 в Yandex Cloud на Kubernetes. 
 
-## Установка Sentry v29.2.0 (минимальный режим)
-
 ### 0. Подготовка (создать namespace и репозитории)
 
 Выполните этот шаг перед шагом 1.1 — оператор устанавливается в namespace `clickhouse-operator`, ClickHouse в namespace `clickhouse`, Sentry в namespace `sentry`.
