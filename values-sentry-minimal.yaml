@@ -1,0 +1,56 @@
+# Минимальная установка Sentry v29.2.0
+# https://github.com/sentry-kubernetes/charts/releases/tag/sentry-v29.2.0
+
+# Роутинг: в v29 нужно включить ровно один вариант (используем Ingress + Traefik)
+nginx:
+  enabled: false
+ingress:
+  enabled: true
+  ingressClassName: traefik
+  hostname: sentry.local
+
+# Админ при первой установке
+user:
+  create: true
+  email: admin@sentry.local
+  password: admin
+
+# Внешний ClickHouse (обязателен в v29)
+externalClickhouse:
+  host: "clickhouse"
+  tcpPort: 9000
+  httpPort: 8123
+  username: default
+  password: "clickhouse"
+  database: default
+  singleNode: true
+
+# В кластере: PostgreSQL, Redis, Kafka (Kraft — без Zookeeper)
+postgresql:
+  enabled: true
+redis:
+  enabled: true
+kafka:
+  enabled: true
+  zookeeper:
+    enabled: false
+  kraft:
+    enabled: true
+  provisioning:
+    enabled: true
+    replicationFactor: 1
+
+# Минимум реплик
+relay:
+  replicas: 1
+snuba:
+  api:
+    replicas: 1
+  consumer:
+    replicas: 1
+
+# Файлы — локальный объём (минимальный режим)
+filestore:
+  backend: filesystem
+  filesystem:
+    path: /var/lib/sentry/files
