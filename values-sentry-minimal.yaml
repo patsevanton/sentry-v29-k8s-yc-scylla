@@ -15,9 +15,9 @@ user:
   email: admin@sentry.local
   password: admin
 
-# Внешний ClickHouse (обязателен в v29). Сервис CHI Altinity: clickhouse-<CHI-name>.<namespace>.svc
+# Внешний ClickHouse (обязателен в v29). Сервис CHI Altinity: chi-<CHI-name>-<cluster>-<shard>-<replica>
 externalClickhouse:
-  host: "clickhouse-sentry-clickhouse.sentry.svc"
+  host: "chi-sentry-clickhouse-single-node-0-0.sentry.svc"
   tcpPort: 9000
   httpPort: 8123
   username: default

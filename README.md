@@ -2,6 +2,16 @@
 
 ## Установка Sentry v29.2.0 (минимальный режим)
 
+### 0. Подготовка (создать namespace и репозитории)
+
+Выполните до шага 1.1 — оператор и Sentry устанавливаются в namespace `sentry`.
+
+```bash
+kubectl create namespace sentry
+helm repo add altinity https://helm.altinity.com
+helm repo add sentry https://sentry-kubernetes.github.io/charts
+helm repo update
+```
 
 ### 1. ClickHouse (в v29 внешний ClickHouse обязателен)
 
@@ -10,8 +20,6 @@
 **1.1. Установка Altinity ClickHouse Operator** (ставим в namespace `sentry`, чтобы оператор наблюдал за CHI в том же namespace):
 
 ```bash
-helm repo add altinity https://helm.altinity.com
-helm repo update
 helm upgrade --install clickhouse-operator altinity/altinity-clickhouse-operator \
   --namespace sentry
 ```
@@ -23,15 +31,16 @@ kubectl apply -f clickhouse.yaml
 kubectl -n sentry get clickhouseinstallation
 kubectl -n sentry get pods -l clickhouse.altinity.com/chi=sentry-clickhouse
 kubectl -n sentry wait --for=condition=ready pod -l clickhouse.altinity.com/chi=sentry-clickhouse --timeout=300s
-kubectl -n sentry get svc clickhouse-sentry-clickhouse
+kubectl -n sentry get svc -l clickhouse.altinity.com/chi=sentry-clickhouse
 ```
 
-### 2. Репозиторий и namespace
+### 2. Репозиторий Sentry
+
+Репозиторий и namespace уже созданы в шаге 0. При необходимости повторите:
 
 ```bash
 helm repo add sentry https://sentry-kubernetes.github.io/charts
 helm repo update
-kubectl create namespace sentry
 ```
 
 ### 3. Установка Sentry
