@@ -5,6 +5,8 @@
 Репозиторий и namespace уже созданы в шаге 0. При необходимости повторите:
 
 ```bash
+kubectl create namespace sentry
+helm repo add sentry https://sentry-kubernetes.github.io/charts
 helm repo add sentry https://sentry-kubernetes.github.io/charts
 helm repo update
 ```

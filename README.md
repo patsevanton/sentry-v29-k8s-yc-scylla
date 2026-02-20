@@ -5,12 +5,7 @@
 Создайте необходимые namespace и подключите необходимые helm репозитории
 
 ```bash
-kubectl create namespace clickhouse-operator
 kubectl create namespace clickhouse
-kubectl create namespace sentry
-helm repo add altinity https://helm.altinity.com
-helm repo add sentry https://sentry-kubernetes.github.io/charts
-helm repo update
 ```
 
 ### 1. ClickHouse
@@ -19,8 +14,11 @@ helm repo update
 **1.1. Установка Altinity ClickHouse Operator**:
 
 ```bash
+helm repo add altinity https://helm.altinity.com
+helm update
 helm upgrade --install clickhouse-operator altinity/altinity-clickhouse-operator \
   --namespace clickhouse-operator \
+  --create-namespace \
   --set watchNamespaces[0]=clickhouse
 ```
 
