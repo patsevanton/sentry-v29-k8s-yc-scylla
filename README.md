@@ -70,28 +70,3 @@ kubectl -n sentry logs deployment/sentry-snuba-api --tail=20
 kubectl -n sentry logs sentry-taskbroker-ingest-0 --tail=20
 kubectl -n sentry logs deployment/sentry-web --tail=20
 ```
-
-**Примечание:** Если поды `sentry-taskbroker-ingest-0` или `sentry-taskbroker-long-0` находятся в состоянии `CrashLoopBackOff` с ошибкой `UnknownTopicOrPartition`, создайте недостающие топики Kafka вручную:
-```bash
-kubectl -n sentry exec sentry-kafka-controller-0 -- kafka-topics.sh --bootstrap-server localhost:9092 --create --topic taskworker-ingest --partitions 1 --replication-factor 1
-kubectl -n sentry exec sentry-kafka-controller-0 -- kafka-topics.sh --bootstrap-server localhost:9092 --create --topic taskworker-long --partitions 1 --replication-factor 1
-kubectl -n sentry delete pod sentry-taskbroker-ingest-0 sentry-taskbroker-long-0
-```
-
-Доступ к веб-интерфейсу — через Ingress (hostname в `values-sentry-minimal.yaml`, по умолчанию `sentry.local`) или `kubectl port-forward`:
-
-```bash
-kubectl -n sentry port-forward svc/sentry-web 9000:9000
-# Открыть http://localhost:9000, логин admin@sentry.local / admin
-```
-
-### Удаление
-
-```bash
-helm uninstall sentry -n sentry
-kubectl delete -f clickhouse.yaml
-kubectl delete namespace sentry
-kubectl delete namespace clickhouse
-# при необходимости: helm uninstall clickhouse-operator -n clickhouse-operator
-kubectl delete namespace clickhouse-operator
-```

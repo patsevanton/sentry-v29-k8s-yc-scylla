@@ -1,15 +1,3 @@
-# Минимальная установка Sentry v29.2.0
-# https://github.com/sentry-kubernetes/charts/releases/tag/sentry-v29.2.0
-
-# Роутинг: в v29 нужно включить ровно один вариант (используем Ingress + Traefik)
-nginx:
-  enabled: false
-ingress:
-  enabled: true
-  ingressClassName: traefik
-  hostname: sentry.local
-
-# Админ при первой установке
 user:
   create: true
   email: admin@sentry.local
@@ -39,18 +27,3 @@ kafka:
   provisioning:
     enabled: true
     replicationFactor: 1
-
-# Минимум реплик
-relay:
-  replicas: 1
-snuba:
-  api:
-    replicas: 1
-  consumer:
-    replicas: 1
-
-# Файлы — локальный объём (минимальный режим)
-filestore:
-  backend: filesystem
-  filesystem:
-    path: /var/lib/sentry/files
