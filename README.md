@@ -20,19 +20,29 @@ helm upgrade --install clickhouse-operator altinity/altinity-clickhouse-operator
   --version 0.26.0 \
   --namespace clickhouse-operator \
   --create-namespace \
-  --set watchNamespaces[0]=clickhouse \
   --wait
 ```
 
 Оператор будет наблюдать за namespace `clickhouse`, где будет установлен ClickHouse.
 
+**Вариант через ClickHouseOperatorConfiguration** (наблюдение за событиями в ns `clickhouse`):
+
+```yaml
+apiVersion: "clickhouse.altinity.com/v1"
+kind: "ClickHouseOperatorConfiguration"
+metadata:
+  name: "watch-clickhouse-namespace"
+spec:
+  watch:
+    namespaces:
+    - "clickhouse"
+```
+
+Применить: `kubectl apply -f clickhouse-operator-config.yaml` (в ns, где установлен оператор, или как глобальная конфигурация по документации оператора).
+
 **1.2. Создание ClickHouse**:
 
 ```bash
 kubectl apply -f clickhouse.yaml
-kubectl -n clickhouse get clickhouseinstallation
-kubectl -n clickhouse get pods -l clickhouse.altinity.com/chi=sentry-clickhouse
-kubectl -n clickhouse wait --for=condition=ready pod -l clickhouse.altinity.com/chi=sentry-clickhouse --timeout=300s
-kubectl -n clickhouse get svc -l clickhouse.altinity.com/chi=sentry-clickhouse
 ```
 
