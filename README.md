@@ -1,26 +1,37 @@
-# sentry-v29-k8s-yc-scylla
-
-Развёртывание Sentry v29.2.0 в Yandex Cloud на Kubernetes. ScyllaDB для nodestore; ClickHouse, PostgreSQL, Redis; S3 только для filestore; Kafka через operator (в кластере).
+# Развёртывание Sentry v29.2.0 в Yandex Cloud на Kubernetes. 
 
 ## Установка Sentry v29.2.0 (минимальный режим)
 
-Чарт: [sentry-kubernetes/charts sentry-v29.2.0](https://github.com/sentry-kubernetes/charts/releases/tag/sentry-v29.2.0). Требуется `kubectl` и `helm`, доступ в кластер.
 
-### 1. Репозиторий и namespace
+### 1. ClickHouse (в v29 внешний ClickHouse обязателен)
+
+По [документации Sentry](https://github.com/sentry-kubernetes/charts/blob/develop/charts/sentry/docs/external-clickhouse.md) используется внешний ClickHouse через [Altinity ClickHouse Operator](https://github.com/Altinity/clickhouse-operator).
+
+**1.1. Установка Altinity ClickHouse Operator** (ставим в namespace `sentry`, чтобы оператор наблюдал за CHI в том же namespace):
+
+```bash
+helm repo add altinity https://helm.altinity.com
+helm repo update
+helm upgrade --install clickhouse-operator altinity/altinity-clickhouse-operator \
+  --namespace sentry
+```
+
+**1.2. Создание ClickHouse (CHI)**:
+
+```bash
+kubectl apply -f clickhouse.yaml
+kubectl -n sentry get clickhouseinstallation
+kubectl -n sentry get pods -l clickhouse.altinity.com/chi=sentry-clickhouse
+kubectl -n sentry wait --for=condition=ready pod -l clickhouse.altinity.com/chi=sentry-clickhouse --timeout=300s
+kubectl -n sentry get svc clickhouse-sentry-clickhouse
+```
+
+### 2. Репозиторий и namespace
 
 ```bash
 helm repo add sentry https://sentry-kubernetes.github.io/charts
 helm repo update
 kubectl create namespace sentry
-```
-
-### 2. ClickHouse (в v29 внешний ClickHouse обязателен)
-
-```bash
-kubectl apply -f k8s-clickhouse-minimal.yaml
-kubectl -n sentry get pods -l app=clickhouse
-kubectl -n sentry wait --for=condition=ready pod -l app=clickhouse --timeout=120s
-kubectl -n sentry logs -l app=clickhouse --tail=10
 ```
 
 ### 3. Установка Sentry
@@ -35,17 +46,6 @@ helm install sentry sentry/sentry --version 29.2.0 -n sentry \
 ```bash
 helm upgrade sentry sentry/sentry --version 29.2.0 -n sentry \
   -f values-sentry-minimal.yaml --timeout=600s
-```
-
-### 4. Топик Kafka для taskbroker-ingest (если под в CrashLoopBackOff)
-
-Если `sentry-taskbroker-ingest-0` в CrashLoopBackOff из‑за отсутствия топика:
-
-```bash
-kubectl -n sentry exec sentry-kafka-controller-0 -- kafka-topics.sh \
-  --bootstrap-server localhost:9092 --create --topic taskworker-ingest \
-  --partitions 1 --replication-factor 1
-kubectl -n sentry delete pod sentry-taskbroker-ingest-0
 ```
 
 ### 5. Проверка подов и логов
@@ -68,25 +68,7 @@ kubectl -n sentry port-forward svc/sentry-web 9000:9000
 
 ```bash
 helm uninstall sentry -n sentry
-kubectl delete -f k8s-clickhouse-minimal.yaml
+kubectl delete -f clickhouse.yaml
 kubectl delete namespace sentry
-```
-
----
-
-## Terraform
-
-Инфраструктура: VPC, Managed Kubernetes, ClickHouse, PostgreSQL, Redis, S3. Kafka разворачивается в кластере через operator (например Strimzi).
-
-```bash
-export YC_FOLDER_ID='ваш folder'
-terraform init
-terraform apply
-```
-
-Переменные — в `variables.tf` (filestore, ScyllaDB, DNS, Sentry). После apply создаётся `values_sentry.yaml`.
-
-Подключение к кластеру:
-```bash
-yc managed-kubernetes cluster get-credentials --id $(terraform output -raw k8s_cluster_id) --external --force
+# при необходимости: helm uninstall clickhouse-operator -n sentry
 ```
