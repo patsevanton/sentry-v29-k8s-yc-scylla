@@ -1,4 +1,0 @@
-# Values для Altinity ClickHouse Operator
-# Настройка watchNamespaces для наблюдения за namespace clickhouse
-watchNamespaces:
-  - clickhouse
