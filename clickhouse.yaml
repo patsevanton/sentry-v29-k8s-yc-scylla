@@ -1,11 +1,11 @@
 # Внешний ClickHouse для Sentry v29 (Altinity ClickHouse Operator).
 # Документация: https://github.com/sentry-kubernetes/charts/blob/develop/charts/sentry/docs/external-clickhouse.md
-# Оператор должен быть установлен заранее и смотреть namespace sentry (или все namespaces).
+# Оператор должен быть установлен заранее в namespace clickhouse-operator и смотреть namespace clickhouse (или все namespaces).
 apiVersion: clickhouse.altinity.com/v1
 kind: ClickHouseInstallation
 metadata:
   name: sentry-clickhouse
-  namespace: sentry
+  namespace: clickhouse
 spec:
   configuration:
     clusters:

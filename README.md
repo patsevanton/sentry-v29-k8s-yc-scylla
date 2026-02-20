@@ -4,9 +4,11 @@
 
 ### 0. Подготовка (создать namespace и репозитории)
 
-Выполните этот шаг перед шагом 1.1 — оператор и Sentry устанавливаются в namespace `sentry`.
+Выполните этот шаг перед шагом 1.1 — оператор устанавливается в namespace `clickhouse-operator`, ClickHouse в namespace `clickhouse`, Sentry в namespace `sentry`.
 
 ```bash
+kubectl create namespace clickhouse-operator
+kubectl create namespace clickhouse
 kubectl create namespace sentry
 helm repo add altinity https://helm.altinity.com
 helm repo add sentry https://sentry-kubernetes.github.io/charts
@@ -17,21 +19,24 @@ helm repo update
 
 По [документации Sentry](https://github.com/sentry-kubernetes/charts/blob/develop/charts/sentry/docs/external-clickhouse.md) используется внешний ClickHouse через [Altinity ClickHouse Operator](https://github.com/Altinity/clickhouse-operator).
 
-**1.1. Установка Altinity ClickHouse Operator** (ставим в namespace `sentry`, чтобы оператор наблюдал за CHI в том же namespace):
+**1.1. Установка Altinity ClickHouse Operator** (ставим в namespace `clickhouse-operator`):
 
 ```bash
 helm upgrade --install clickhouse-operator altinity/altinity-clickhouse-operator \
-  --namespace sentry
+  --namespace clickhouse-operator \
+  --set watchNamespaces[0]=clickhouse
 ```
+
+Оператор будет наблюдать за namespace `clickhouse`, где будет установлен ClickHouse.
 
 **1.2. Создание ClickHouse (CHI)**:
 
 ```bash
 kubectl apply -f clickhouse.yaml
-kubectl -n sentry get clickhouseinstallation
-kubectl -n sentry get pods -l clickhouse.altinity.com/chi=sentry-clickhouse
-kubectl -n sentry wait --for=condition=ready pod -l clickhouse.altinity.com/chi=sentry-clickhouse --timeout=300s
-kubectl -n sentry get svc -l clickhouse.altinity.com/chi=sentry-clickhouse
+kubectl -n clickhouse get clickhouseinstallation
+kubectl -n clickhouse get pods -l clickhouse.altinity.com/chi=sentry-clickhouse
+kubectl -n clickhouse wait --for=condition=ready pod -l clickhouse.altinity.com/chi=sentry-clickhouse --timeout=300s
+kubectl -n clickhouse get svc -l clickhouse.altinity.com/chi=sentry-clickhouse
 ```
 
 ### 2. Репозиторий Sentry
@@ -79,5 +84,7 @@ kubectl -n sentry port-forward svc/sentry-web 9000:9000
 helm uninstall sentry -n sentry
 kubectl delete -f clickhouse.yaml
 kubectl delete namespace sentry
-# при необходимости: helm uninstall clickhouse-operator -n sentry
+kubectl delete namespace clickhouse
+# при необходимости: helm uninstall clickhouse-operator -n clickhouse-operator
+kubectl delete namespace clickhouse-operator
 ```
