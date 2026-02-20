@@ -1,4 +1,4 @@
-# Развёртывание Sentry v29.2.0 в Yandex Cloud на Kubernetes. 
+# Развёртывание Sentry v29.3.0 в Yandex Cloud на Kubernetes. 
 
 ### 0. Подготовка (создать namespace и репозитории)
 
@@ -51,14 +51,14 @@ helm repo update
 ### 3. Установка Sentry
 
 ```bash
-helm install sentry sentry/sentry --version 29.2.0 -n sentry \
+helm install sentry sentry/sentry --version 29.3.0 -n sentry \
   -f values-sentry-minimal.yaml --timeout=900s
 ```
 
 Без `--wait` установка не будет ждать готовности всех подов; после установки проверьте состояние и логи (шаг 5). При необходимости обновление:
 
 ```bash
-helm upgrade sentry sentry/sentry --version 29.2.0 -n sentry \
+helm upgrade sentry sentry/sentry --version 29.3.0 -n sentry \
   -f values-sentry-minimal.yaml --timeout=600s
 ```
 
