@@ -25,6 +25,19 @@ helm upgrade --install clickhouse-operator altinity/altinity-clickhouse-operator
   --set watchNamespaces[0]=clickhouse
 ```
 
+**Важно:** Если оператор не создаёт поды ClickHouse после применения `clickhouse.yaml`, проверьте ConfigMap оператора:
+```bash
+kubectl -n clickhouse-operator get configmap clickhouse-operator-altinity-clickhouse-operator-files -o jsonpath='{.data.config\.yaml}' | grep -A 3 "watch:"
+```
+
+Если `watch.namespaces` пустой (`[]`), обновите ConfigMap вручную:
+```bash
+kubectl -n clickhouse-operator get configmap clickhouse-operator-altinity-clickhouse-operator-files -o yaml | \
+  python3 -c "import sys, yaml; data=yaml.safe_load(sys.stdin); data['data']['config.yaml'] = yaml.safe_load(data['data']['config.yaml']); data['data']['config.yaml']['watch']['namespaces']=['clickhouse']; data['data']['config.yaml'] = yaml.dump(data['data']['config.yaml'], default_flow_style=False, allow_unicode=True); print(yaml.dump(data, default_flow_style=False, allow_unicode=True))" | \
+  kubectl -n clickhouse-operator replace -f -
+kubectl -n clickhouse-operator delete pod -l app.kubernetes.io/name=altinity-clickhouse-operator
+```
+
 Оператор будет наблюдать за namespace `clickhouse`, где будет установлен ClickHouse.
 
 **1.2. Создание ClickHouse (CHI)**:
@@ -67,6 +80,13 @@ kubectl -n sentry get pods
 kubectl -n sentry logs deployment/sentry-snuba-api --tail=20
 kubectl -n sentry logs sentry-taskbroker-ingest-0 --tail=20
 kubectl -n sentry logs deployment/sentry-web --tail=20
+```
+
+**Примечание:** Если поды `sentry-taskbroker-ingest-0` или `sentry-taskbroker-long-0` находятся в состоянии `CrashLoopBackOff` с ошибкой `UnknownTopicOrPartition`, создайте недостающие топики Kafka вручную:
+```bash
+kubectl -n sentry exec sentry-kafka-controller-0 -- kafka-topics.sh --bootstrap-server localhost:9092 --create --topic taskworker-ingest --partitions 1 --replication-factor 1
+kubectl -n sentry exec sentry-kafka-controller-0 -- kafka-topics.sh --bootstrap-server localhost:9092 --create --topic taskworker-long --partitions 1 --replication-factor 1
+kubectl -n sentry delete pod sentry-taskbroker-ingest-0 sentry-taskbroker-long-0
 ```
 
 Доступ к веб-интерфейсу — через Ingress (hostname в `values-sentry-minimal.yaml`, по умолчанию `sentry.local`) или `kubectl port-forward`:
