@@ -4,7 +4,7 @@
 
 ### 0. Подготовка (создать namespace и репозитории)
 
-Выполните до шага 1.1 — оператор и Sentry устанавливаются в namespace `sentry`.
+Выполните этот шаг перед шагом 1.1 — оператор и Sentry устанавливаются в namespace `sentry`.
 
 ```bash
 kubectl create namespace sentry
@@ -57,7 +57,7 @@ helm upgrade sentry sentry/sentry --version 29.2.0 -n sentry \
   -f values-sentry-minimal.yaml --timeout=600s
 ```
 
-### 5. Проверка подов и логов
+### 4. Проверка подов и логов
 
 ```bash
 kubectl -n sentry get pods
