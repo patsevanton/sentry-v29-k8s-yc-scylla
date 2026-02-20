@@ -19,23 +19,12 @@ helm repo update
 
 **1.1. Установка Altinity ClickHouse Operator** (ставим в namespace `clickhouse-operator`):
 
+Настройка `watchNamespaces` выполняется через файл `values-clickhouse-operator.yaml`:
+
 ```bash
 helm upgrade --install clickhouse-operator altinity/altinity-clickhouse-operator \
   --namespace clickhouse-operator \
-  --set watchNamespaces[0]=clickhouse
-```
-
-**Важно:** Если оператор не создаёт поды ClickHouse после применения `clickhouse.yaml`, проверьте ConfigMap оператора:
-```bash
-kubectl -n clickhouse-operator get configmap clickhouse-operator-altinity-clickhouse-operator-files -o jsonpath='{.data.config\.yaml}' | grep -A 3 "watch:"
-```
-
-Если `watch.namespaces` пустой (`[]`), обновите ConfigMap вручную:
-```bash
-kubectl -n clickhouse-operator get configmap clickhouse-operator-altinity-clickhouse-operator-files -o yaml | \
-  python3 -c "import sys, yaml; data=yaml.safe_load(sys.stdin); data['data']['config.yaml'] = yaml.safe_load(data['data']['config.yaml']); data['data']['config.yaml']['watch']['namespaces']=['clickhouse']; data['data']['config.yaml'] = yaml.dump(data['data']['config.yaml'], default_flow_style=False, allow_unicode=True); print(yaml.dump(data, default_flow_style=False, allow_unicode=True))" | \
-  kubectl -n clickhouse-operator replace -f -
-kubectl -n clickhouse-operator delete pod -l app.kubernetes.io/name=altinity-clickhouse-operator
+  -f values-clickhouse-operator.yaml
 ```
 
 Оператор будет наблюдать за namespace `clickhouse`, где будет установлен ClickHouse.
