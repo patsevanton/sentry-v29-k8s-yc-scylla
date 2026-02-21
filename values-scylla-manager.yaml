@@ -1,0 +1,15 @@
+scylla:
+  datacenter: manager-dc
+  racks:
+    - name: manager-rack
+      members: 1
+      storage:
+        storageClassName: yc-network-ssd
+        capacity: 8Gi
+      resources:
+        limits:
+          cpu: 1
+          memory: 1Gi
+        requests:
+          cpu: 1
+          memory: 1Gi

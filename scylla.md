@@ -48,56 +48,13 @@ helm upgrade --install scylla-operator scylla/scylla-operator \
 helm upgrade --install scylla-manager scylla/scylla-manager \
   --create-namespace \
   --namespace scylla-manager \
-  --set "scylla.datacenter=manager-dc" \
-  --set "scylla.racks[0].name=manager-rack" \
-  --set "scylla.racks[0].members=1" \
-  --set "scylla.racks[0].storage.storageClassName=yc-network-ssd" \
-  --set "scylla.racks[0].storage.capacity=8Gi" \
-  --set "scylla.racks[0].resources.limits.cpu=1" \
-  --set "scylla.racks[0].resources.limits.memory=1Gi" \
-  --set "scylla.racks[0].resources.requests.cpu=1" \
-  --set "scylla.racks[0].resources.requests.memory=1Gi" \
+  -f values-scylla-manager.yaml \
   --wait
 ```
 
 
 ## 5. Кластер ScyllaDB
 
-
-```bash
-helm upgrade --install scylla scylla/scylla \
-  --create-namespace \
-  --namespace scylla \
-  --set datacenter=dc1 \
-  --set "racks[0].name=rack1" \
-  --set "racks[0].members=2" \
-  --set "racks[0].storage.storageClassName=yc-network-ssd" \
-  --set "racks[0].storage.capacity=8Gi" \
-  --set "racks[0].resources.limits.cpu=1" \
-  --set "racks[0].resources.limits.memory=1Gi" \
-  --set "racks[0].resources.requests.cpu=1" \
-  --set "racks[0].resources.requests.memory=1Gi" \
-  --wait
-```
-
-Либо создать файл `values-scylla.yaml` и установить с ним (подставьте свой StorageClass и размер):
-
-```yaml
-datacenter: dc1
-racks:
-  - name: rack1
-    members: 2
-    storage:
-      storageClassName: yc-network-ssd   # для Yandex Cloud; в других облаках — свой SC
-      capacity: 8Gi                      # для Yandex: размер кратный 4 Gi
-    resources:
-      limits:
-        cpu: 1
-        memory: 1Gi
-      requests:
-        cpu: 1
-        memory: 1Gi
-```
 
 ```bash
 helm upgrade --install scylla scylla/scylla \
