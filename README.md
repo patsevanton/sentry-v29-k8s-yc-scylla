@@ -42,3 +42,28 @@ kubectl rollout restart deployment/clickhouse-operator -n clickhouse-operator
 kubectl apply -f clickhouse.yaml
 ```
 
+### 2. Репозиторий Sentry
+
+Репозиторий и namespace уже созданы в шаге 0. При необходимости повторите:
+
+```bash
+kubectl create namespace sentry
+helm repo add sentry https://sentry-kubernetes.github.io/charts
+helm repo update
+```
+
+### 3. Установка Sentry
+
+```bash
+helm upgrade --install sentry sentry/sentry --version 29.3.0 -n sentry \
+  -f values-sentry-minimal.yaml --timeout=900s
+```
+
+### 4. Проверка подов и логов
+
+```bash
+kubectl -n sentry get pods
+kubectl -n sentry logs deployment/sentry-snuba-api --tail=20
+kubectl -n sentry logs sentry-taskbroker-ingest-0 --tail=20
+kubectl -n sentry logs deployment/sentry-web --tail=20
+```
