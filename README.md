@@ -30,7 +30,8 @@ helm upgrade --install clickhouse-operator altinity/altinity-clickhouse-operator
 kubectl apply -n clickhouse-operator -f clickhouse-operator-config.yaml 
 ```
 
-Перезапуск оператора, чтобы подхватить ClickHouseOperatorConfiguration:
+Перезапуск оператора, чтобы подхватить ClickHouseOperatorConfiguration.
+Подробнее в issue https://github.com/Altinity/clickhouse-operator/issues/1930.
 
 ```bash
 kubectl rollout restart deployment/clickhouse-operator -n clickhouse-operator
