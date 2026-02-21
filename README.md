@@ -17,7 +17,7 @@ kubectl create namespace clickhouse
 helm repo add altinity https://helm.altinity.com
 helm repo update
 helm upgrade --install clickhouse-operator altinity/altinity-clickhouse-operator \
-  --version 0.26.0 \
+  --version 0.25.6 \
   --namespace clickhouse-operator \
   --create-namespace \
   --wait
@@ -28,6 +28,12 @@ helm upgrade --install clickhouse-operator altinity/altinity-clickhouse-operator
 
 ```bash
 kubectl apply -n clickhouse-operator -f clickhouse-operator-config.yaml 
+```
+
+Перезапуск оператора, чтобы подхватить ClickHouseOperatorConfiguration:
+
+```bash
+kubectl rollout restart deployment/clickhouse-operator -n clickhouse-operator
 ```
 
 **1.2. Создание ClickHouse**:
