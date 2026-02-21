@@ -23,22 +23,12 @@ helm upgrade --install clickhouse-operator altinity/altinity-clickhouse-operator
   --wait
 ```
 
-Оператор будет наблюдать за namespace `clickhouse`, где будет установлен ClickHouse.
+Оператор через ClickHouseOperatorConfiguration будет наблюдать за namespace `clickhouse`
 
-**Вариант через ClickHouseOperatorConfiguration** (наблюдение за событиями в ns `clickhouse`):
 
-```yaml
-apiVersion: "clickhouse.altinity.com/v1"
-kind: "ClickHouseOperatorConfiguration"
-metadata:
-  name: "watch-clickhouse-namespace"
-spec:
-  watch:
-    namespaces:
-    - "clickhouse"
+```bash
+kubectl apply -n clickhouse-operator -f clickhouse-operator-config.yaml 
 ```
-
-Применить: `kubectl apply -f clickhouse-operator-config.yaml` (в ns, где установлен оператор, или как глобальная конфигурация по документации оператора).
 
 **1.2. Создание ClickHouse**:
 
