@@ -23,7 +23,8 @@ helm install \
   --namespace cert-manager \
   --create-namespace \
   --version v1.19.3 \
-  --set crds.enabled=true
+  --set crds.enabled=true \
+  --wait
 ```
 
 Дождаться готовности подов:
