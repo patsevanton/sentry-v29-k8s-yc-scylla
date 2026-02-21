@@ -2,17 +2,13 @@
 
 Установка ScyllaDB Operator, ScyllaDB Manager и кластера ScyllaDB с помощью Helm.
 
-## Требования
-
-- Kubernetes (поддерживаемые версии — [support matrix](https://operator.docs.scylladb.com/stable/support/releases.html#support-matrix))
-- Helm 3+
-- StorageClass для PersistentVolumes
-
 **Важно:** ScyllaDB Operator должен быть в namespace `scylla-operator`, ScyllaDB Manager — в `scylla-manager`. Кластер ScyllaDB можно развернуть в любом namespace (в примере — `scylla`).
 
-**Yandex Cloud:** в чарте по умолчанию указан `storageClassName: scylladb-local-xfs`, которого в Yandex Managed Kubernetes нет. Нужно явно задать существующий StorageClass (например `yc-network-hdd` или `yc-network-ssd`) и размер диска **кратный 4 Gi** (ограничение Yandex Disk), например `8Gi` или `10Gi`.
-
----
+```bash
+helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+helm repo update
+helm upgrade --install --wait prometheus-operator-crds prometheus-community/prometheus-operator-crds --version 20.0.0
+```
 
 ## 1. Cert Manager (для webhook-сертификатов оператора)
 
@@ -28,7 +24,6 @@ kubectl apply -f https://github.com/cert-manager/cert-manager/releases/download/
 kubectl wait -n cert-manager --for=condition=ready pod -l app.kubernetes.io/instance=cert-manager --timeout=120s
 ```
 
----
 
 ## 2. Helm-репозиторий ScyllaDB
 
@@ -36,14 +31,6 @@ kubectl wait -n cert-manager --for=condition=ready pod -l app.kubernetes.io/inst
 helm repo add scylla https://scylla-operator-charts.storage.googleapis.com/stable
 helm repo update
 ```
-
-Проверка чартов:
-
-```bash
-helm search repo scylla
-```
-
----
 
 ## 3. ScyllaDB Operator
 
@@ -54,28 +41,28 @@ helm upgrade --install scylla-operator scylla/scylla-operator \
   --wait
 ```
 
----
 
-## 4. ScyllaDB Manager (опционально, для бэкапов и ремонта)
+## 4. ScyllaDB Manager
 
 ```bash
 helm upgrade --install scylla-manager scylla/scylla-manager \
   --create-namespace \
   --namespace scylla-manager \
+  --set "scylla.datacenter=manager-dc" \
+  --set "scylla.racks[0].name=manager-rack" \
+  --set "scylla.racks[0].members=1" \
+  --set "scylla.racks[0].storage.storageClassName=yc-network-ssd" \
+  --set "scylla.racks[0].storage.capacity=8Gi" \
+  --set "scylla.racks[0].resources.limits.cpu=1" \
+  --set "scylla.racks[0].resources.limits.memory=1Gi" \
+  --set "scylla.racks[0].resources.requests.cpu=1" \
+  --set "scylla.racks[0].resources.requests.memory=1Gi" \
   --wait
 ```
 
----
 
 ## 5. Кластер ScyllaDB
 
-Проверьте доступные StorageClass в кластере (для Yandex Cloud обычно `yc-network-hdd`, `yc-network-ssd`):
-
-```bash
-kubectl get storageclass
-```
-
-Минимальный кластер (один rack, 2 узла). **Для Yandex Cloud** задайте существующий `storageClassName` и размер кратный 4 Gi (например `8Gi`):
 
 ```bash
 helm upgrade --install scylla scylla/scylla \
@@ -101,7 +88,7 @@ racks:
   - name: rack1
     members: 2
     storage:
-      storageClassName: yc-network-hdd   # для Yandex Cloud; в других облаках — свой SC
+      storageClassName: yc-network-ssd   # для Yandex Cloud; в других облаках — свой SC
       capacity: 8Gi                      # для Yandex: размер кратный 4 Gi
     resources:
       limits:
@@ -120,7 +107,6 @@ helm upgrade --install scylla scylla/scylla \
   --wait
 ```
 
----
 
 ## 6. Проверка
 
@@ -136,13 +122,6 @@ kubectl -n scylla-operator get pods
 kubectl -n scylla exec -it scylla-dc1-rack1-0 -- cqlsh
 ```
 
----
-
-## Обновление CRD (при обновлении оператора)
-
-Helm не обновляет CRD при upgrade. CRD нужно обновлять вручную по инструкции: [Upgrade of Scylla Operator](https://operator.docs.scylladb.com/stable/upgrade.html).
-
----
 
 ## Удаление
 
