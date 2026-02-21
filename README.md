@@ -1,70 +1,158 @@
-# Развёртывание Sentry v29.3.0 в Yandex Cloud на Kubernetes. 
+# Установка ScyllaDB через Operator в Kubernetes
 
-### 0. Подготовка
+Установка ScyllaDB Operator, ScyllaDB Manager и кластера ScyllaDB с помощью Helm.
 
-Создайте необходимые namespace и подключите необходимые helm репозитории
+## Требования
+
+- Kubernetes (поддерживаемые версии — [support matrix](https://operator.docs.scylladb.com/stable/support/releases.html#support-matrix))
+- Helm 3+
+- StorageClass для PersistentVolumes
+
+**Важно:** ScyllaDB Operator должен быть в namespace `scylla-operator`, ScyllaDB Manager — в `scylla-manager`. Кластер ScyllaDB можно развернуть в любом namespace (в примере — `scylla`).
+
+**Yandex Cloud:** в чарте по умолчанию указан `storageClassName: scylladb-local-xfs`, которого в Yandex Managed Kubernetes нет. Нужно явно задать существующий StorageClass (например `yc-network-hdd` или `yc-network-ssd`) и размер диска **кратный 4 Gi** (ограничение Yandex Disk), например `8Gi` или `10Gi`.
+
+---
+
+## 1. Cert Manager (для webhook-сертификатов оператора)
+
+Нужен для самоподписанных сертификатов оператора. Если cert-manager уже установлен — шаг пропустить.
 
 ```bash
-kubectl create namespace clickhouse
+kubectl apply -f https://github.com/cert-manager/cert-manager/releases/download/v1.13.0/cert-manager.yaml
 ```
 
-### 1. ClickHouse
-
-
-**1.1. Установка Altinity ClickHouse Operator**:
+Дождаться готовности подов:
 
 ```bash
-helm repo add altinity https://helm.altinity.com
+kubectl wait -n cert-manager --for=condition=ready pod -l app.kubernetes.io/instance=cert-manager --timeout=120s
+```
+
+---
+
+## 2. Helm-репозиторий ScyllaDB
+
+```bash
+helm repo add scylla https://scylla-operator-charts.storage.googleapis.com/stable
 helm repo update
-helm upgrade --install clickhouse-operator altinity/altinity-clickhouse-operator \
-  --version 0.25.6 \
-  --namespace clickhouse-operator \
+```
+
+Проверка чартов:
+
+```bash
+helm search repo scylla
+```
+
+---
+
+## 3. ScyllaDB Operator
+
+```bash
+helm upgrade --install scylla-operator scylla/scylla-operator \
   --create-namespace \
+  --namespace scylla-operator \
   --wait
 ```
 
-Оператор через ClickHouseOperatorConfiguration будет наблюдать за namespace `clickhouse`
+---
 
+## 4. ScyllaDB Manager (опционально, для бэкапов и ремонта)
 
 ```bash
-kubectl apply -n clickhouse-operator -f clickhouse-operator-config.yaml 
+helm upgrade --install scylla-manager scylla/scylla-manager \
+  --create-namespace \
+  --namespace scylla-manager \
+  --wait
 ```
 
-Перезапуск оператора, чтобы подхватить ClickHouseOperatorConfiguration.
-Подробнее в issue https://github.com/Altinity/clickhouse-operator/issues/1930.
+---
+
+## 5. Кластер ScyllaDB
+
+Проверьте доступные StorageClass в кластере (для Yandex Cloud обычно `yc-network-hdd`, `yc-network-ssd`):
 
 ```bash
-kubectl rollout restart deployment/clickhouse-operator -n clickhouse-operator
+kubectl get storageclass
 ```
 
-**1.2. Создание ClickHouse**:
+Минимальный кластер (один rack, 2 узла). **Для Yandex Cloud** задайте существующий `storageClassName` и размер кратный 4 Gi (например `8Gi`):
 
 ```bash
-kubectl apply -f clickhouse.yaml
+helm upgrade --install scylla scylla/scylla \
+  --create-namespace \
+  --namespace scylla \
+  --set datacenter=dc1 \
+  --set "racks[0].name=rack1" \
+  --set "racks[0].members=2" \
+  --set "racks[0].storage.storageClassName=yc-network-ssd" \
+  --set "racks[0].storage.capacity=8Gi" \
+  --set "racks[0].resources.limits.cpu=1" \
+  --set "racks[0].resources.limits.memory=1Gi" \
+  --set "racks[0].resources.requests.cpu=1" \
+  --set "racks[0].resources.requests.memory=1Gi" \
+  --wait
 ```
 
-### 2. Репозиторий Sentry
+Либо создать файл `values-scylla.yaml` и установить с ним (подставьте свой StorageClass и размер):
 
-Репозиторий и namespace уже созданы в шаге 0. При необходимости повторите:
-
-```bash
-kubectl create namespace sentry
-helm repo add sentry https://sentry-kubernetes.github.io/charts
-helm repo update
+```yaml
+datacenter: dc1
+racks:
+  - name: rack1
+    members: 2
+    storage:
+      storageClassName: yc-network-hdd   # для Yandex Cloud; в других облаках — свой SC
+      capacity: 8Gi                      # для Yandex: размер кратный 4 Gi
+    resources:
+      limits:
+        cpu: 1
+        memory: 1Gi
+      requests:
+        cpu: 1
+        memory: 1Gi
 ```
 
-### 3. Установка Sentry
-
 ```bash
-helm upgrade --install sentry sentry/sentry --version 29.3.0 -n sentry \
-  -f values-sentry-minimal.yaml --timeout=900s
+helm upgrade --install scylla scylla/scylla \
+  --namespace scylla \
+  --create-namespace \
+  -f values-scylla.yaml \
+  --wait
 ```
 
-### 4. Проверка подов и логов
+---
+
+## 6. Проверка
 
 ```bash
-kubectl -n sentry get pods
-kubectl -n sentry logs deployment/sentry-snuba-api --tail=20
-kubectl -n sentry logs sentry-taskbroker-ingest-0 --tail=20
-kubectl -n sentry logs deployment/sentry-web --tail=20
+kubectl -n scylla get pods
+kubectl -n scylla get scyllaclusters
+kubectl -n scylla-operator get pods
+```
+
+Подключение к кластеру (CQL, порт 9042):
+
+```bash
+kubectl -n scylla exec -it scylla-dc1-rack1-0 -- cqlsh
+```
+
+---
+
+## Обновление CRD (при обновлении оператора)
+
+Helm не обновляет CRD при upgrade. CRD нужно обновлять вручную по инструкции: [Upgrade of Scylla Operator](https://operator.docs.scylladb.com/stable/upgrade.html).
+
+---
+
+## Удаление
+
+В обратном порядке установки:
+
+```bash
+helm uninstall scylla -n scylla
+helm uninstall scylla-manager -n scylla-manager
+helm uninstall scylla-operator -n scylla-operator
+kubectl delete namespace scylla scylla-manager scylla-operator
+# при необходимости:
+kubectl delete -f https://github.com/cert-manager/cert-manager/releases/download/v1.13.0/cert-manager.yaml
 ```
