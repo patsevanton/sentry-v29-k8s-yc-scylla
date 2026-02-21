@@ -9,7 +9,7 @@ scylla:
       resources:
         limits:
           cpu: 1
-          memory: 1Gi
+          memory: 4Gi   # same as main cluster: Scylla needs >=1Gi/shard
         requests:
           cpu: 1
-          memory: 1Gi
+          memory: 4Gi

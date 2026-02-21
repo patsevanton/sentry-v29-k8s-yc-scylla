@@ -15,7 +15,15 @@ helm upgrade --install --wait prometheus-operator-crds prometheus-community/prom
 Нужен для самоподписанных сертификатов оператора. Если cert-manager уже установлен — шаг пропустить.
 
 ```bash
-kubectl apply -f https://github.com/cert-manager/cert-manager/releases/download/v1.13.0/cert-manager.yaml
+helm repo add jetstack https://charts.jetstack.io --force-update
+
+# Install the cert-manager helm chart
+helm install \
+  cert-manager jetstack/cert-manager \
+  --namespace cert-manager \
+  --create-namespace \
+  --version v1.19.3 \
+  --set crds.enabled=true
 ```
 
 Дождаться готовности подов:
@@ -42,25 +50,34 @@ helm upgrade --install scylla-operator scylla/scylla-operator \
 ```
 
 
-## 4. ScyllaDB Manager
+## 4. Кластер ScyllaDB
 
-```bash
-helm upgrade --install scylla-manager scylla/scylla-manager \
-  --create-namespace \
-  --namespace scylla-manager \
-  -f values-scylla-manager.yaml \
-  --wait
-```
-
-
-## 5. Кластер ScyllaDB
-
+**Память:** Scylla требует не менее **1 GiB на шард** (иначе падает с `memory per shard too low` и API на порту 10000 не поднимается). В values задавайте `memory` не меньше **4Gi** на rack (оператор могут оставлять процессу меньше видимой памяти).
 
 ```bash
 helm upgrade --install scylla scylla/scylla \
   --namespace scylla \
   --create-namespace \
   -f values-scylla.yaml \
+  --wait
+```
+
+Дождаться готовности подов кластера:
+
+```bash
+kubectl -n scylla wait --for=condition=ready pod -l app.kubernetes.io/name=scylla --timeout=600s
+```
+
+
+## 5. ScyllaDB Manager
+
+Устанавливать только после того, как кластер ScyllaDB готов и принимает соединения (иначе Manager падает с таймаутом при миграциях БД). Для внутреннего кластера Manager в `values-scylla-manager.yaml` задайте `scylla.racks[].resources.memory` не меньше **4Gi** (как для основного кластера).
+
+```bash
+helm upgrade --install scylla-manager scylla/scylla-manager \
+  --create-namespace \
+  --namespace scylla-manager \
+  -f values-scylla-manager.yaml \
   --wait
 ```
 

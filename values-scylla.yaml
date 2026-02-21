@@ -4,11 +4,11 @@ racks:
     members: 2
     storage:
       storageClassName: yc-network-ssd
-      capacity: 8Gi
+      capacity: 10Gi
     resources:
       limits:
         cpu: 1
-        memory: 1Gi
+        memory: 4Gi   # Scylla requires >= 1 GiB per shard; operator/cgroup can reduce what process sees
       requests:
         cpu: 1
-        memory: 1Gi
+        memory: 4Gi
