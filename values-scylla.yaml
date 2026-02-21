@@ -1,0 +1,14 @@
+datacenter: dc1
+racks:
+  - name: rack1
+    members: 2
+    storage:
+      storageClassName: yc-network-ssd
+      capacity: 8Gi
+    resources:
+      limits:
+        cpu: 1
+        memory: 1Gi
+      requests:
+        cpu: 1
+        memory: 1Gi
