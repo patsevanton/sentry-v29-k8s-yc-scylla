@@ -62,9 +62,27 @@ helm upgrade --install sentry sentry/sentry --version 29.3.0 -n sentry \
 
 ### 4. Проверка подов и логов
 
+В конце установки Sentry убедитесь, что все Job завершились (статус `Completed`). Пока Job ещё запущены, поды инициализации могут быть в статусе `Running`, а helm может ждать готовности.
+
 ```bash
+kubectl -n sentry get jobs
 kubectl -n sentry get pods
+```
+
+Когда все нужные Job в `COMPLETIONS 1/1`, проверьте логи:
+
+```bash
 kubectl -n sentry logs deployment/sentry-snuba-api --tail=20
 kubectl -n sentry logs sentry-taskbroker-ingest-0 --tail=20
 kubectl -n sentry logs deployment/sentry-web --tail=20
+```
+
+### 5. Доступ к Sentry
+
+Sentry доступен по адресу **http://sentry.apatsev.org.ru** через Traefik (Gateway API HTTPRoute).
+
+Убедитесь, что DNS-запись `sentry.apatsev.org.ru` указывает на внешний IP сервиса Traefik LoadBalancer:
+
+```bash
+kubectl -n traefik get svc
 ```

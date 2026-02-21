@@ -115,7 +115,7 @@ resource "null_resource" "gateway_api_crds" {
   ]
 }
 
-# Traefik как контроллер Gateway API (без NGINX GF / Istio / Envoy Gateway)
+# Traefik как контроллер Gateway API
 resource "helm_release" "traefik_gateway" {
   name             = "traefik"
   repository       = "https://traefik.github.io/charts"
@@ -139,6 +139,10 @@ resource "helm_release" "traefik_gateway" {
           # Порт листенера должен совпадать с ports.web.port (контейнер слушает на 8000 — не root)
           web = {
             port = 8000
+            # Разрешить HTTPRoute из других namespace (например sentry)
+            namespacePolicy = {
+              from = "All"
+            }
           }
         }
       }
